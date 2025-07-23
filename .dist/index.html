@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatBot Interface</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    #chatbox {
+      width: 100%;
+      max-width: 500px;
+      height: 500px;
+      border: 1px solid #ccc;
+      background: white;
+      padding: 10px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    .user {
+      text-align: right;
+      margin: 10px;
+      color: blue;
+    }
+    .bot {
+      text-align: left;
+      margin: 10px;
+      color: green;
+    }
+    #inputBox {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+    }
+    #userInput {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+    <h1>health assistent</h1>
+  <h2>Chat With Bot</h2>
+  <div id="chatbox"></div>
+  <div id="inputBox">
+    <input type="text" id="userInput" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+  <script>
+    async function query(data) {
+      const response = await fetch("http://localhost:3000/api/v1/prediction/a4311e7f-8185-4653-9d54-cfec653b3041", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+      const result = await response.json();
+      return result;
+    }
+
+    function addMessage(message, sender) {
+      const chatbox = document.getElementById("chatbox");
+      const msgElement = document.createElement("div");
+      msgElement.className = sender;
+      chatbox.appendChild(msgElement);
+
+      if (sender === "bot") {
+        let i = 0;
+        const speed = 25;
+        function typeWriter() {
+          if (i < message.length) {
+            msgElement.innerHTML += message.charAt(i);
+            i++;
+            setTimeout(typeWriter, speed);
+          }
+        }
+        typeWriter();
+      } else {
+        msgElement.textContent = message;
+      }
+
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      addMessage(text, "user");
+      input.value = "";
+
+      query({ question: text })
+        .then((response) => {
+          const reply = response.text || "🤷 No response from bot.";
+          addMessage(reply, "bot");
+        })
+        .catch((err) => {
+          addMessage("❌ Failed to connect to API.", "bot");
+          console.error("API Error:", err);
+        });
+    }
+  </script>
+</body>
+</html>
